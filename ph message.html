@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Location</title>
+</head>
+<body>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@twilio/sdk"></script>
+    <script>
+        var initialLocation = {
+            lat: 30.773632491630938,
+            lng: 76.56732100181273
+        };
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    // Calculate distance between two points
+                    var lat1 = position.coords.latitude;
+                    var lon1 = position.coords.longitude;
+                    var lat2 = initialLocation.lat;
+                    var lon2 = initialLocation.lng;
+                    var R = 6371; // km
+                    var dLat = (lat2 - lat1).toRad();
+                    var dLon = (lon2 - lon1).toRad();
+                    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    var d = R * c;
+
+                    // Display the timestamp, latitude, longitude, and distance
+                    var timestamp = new Date(position.timestamp);
+                    console.log("Timestamp:", timestamp.toLocaleString());
+                    console.log("Latitude:", lat1.toFixed(6));
+                    console.log("Longitude:", lon1.toFixed(6));
+                    console.log("Distance between two points is " + d.toFixed(2) + " km");
+
+                    // Send SMS using Twilio
+                    sendSMS(`Timestamp: ${timestamp.toLocaleString()}\nLatitude: ${lat1.toFixed(6)}\nLongitude: ${lon1.toFixed(6)}\nDistance: ${d.toFixed(2)} km`);
+                });
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
+        }
+
+        Number.prototype.toRad = function () {
+            return this * Math.PI / 180;
+        }
+
+        function sendSMS(message) {
+            var accountSid = 'YOUR_TWILIO_ACCOUNT_SID';
+            var authToken = 'YOUR_TWILIO_AUTH_TOKEN';
+            var twilioNumber = 'YOUR_TWILIO_PHONE_NUMBER';
+            var toNumber = '+917717632380';  // Update with your recipient's number
+
+            var twilio = require('twilio');
+            var client = new twilio(accountSid, authToken);
+
+            client.messages
+                .create({
+                    body: message,
+                    from: twilioNumber,
+                    to: toNumber
+                })
+                .then(message => console.log('SMS sent:', message.sid))
+                .catch(error => console.error('Error sending SMS:', error));
+        }
+
+        setInterval(getLocation, 1000);
+    </script>
+</body>
+</html>
